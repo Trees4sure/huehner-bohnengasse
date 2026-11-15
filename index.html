@@ -4,6 +4,15 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="author" content="JN">
+<meta name="description" content="Isolde und der streng geheime Eierplan – ein kleines Hühnerhof-Spiel für Groß und Klein.">
+<meta name="theme-color" content="#5a381c">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Bohnengasse">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <title>Die Hühner der Bohnengasse – Isolde und der streng geheime Eierplan</title>
 <style>
 :root{
@@ -1795,8 +1804,9 @@ async function startScreen() {
     html: `<div class="titel">${art('titelbild', titelPH)}</div><p class="sub">Isolde und der streng geheime Eierplan</p>
       ${saved ? `<p class="small">Gespeichert: Etappe ${saved.stage} – ${STAGES[saved.stage].title}</p>` : ''}
       ${!Store.ok ? '<p class="note">Hinweis: Dieser Browser erlaubt für die Datei keinen lokalen Speicher. Der Spielstand geht beim Schließen verloren.</p>' : ''}`,
-    buttons: [{ label: 'Weiterspielen', primary: !!saved, disabled: !saved, value: 'weiter' }, { label: 'Neu anfangen', primary: !saved, value: 'neu' }]
+    buttons: [...(canOfferInstall() ? [{ label: '📲 Als App', value: 'install' }] : []), { label: 'Weiterspielen', primary: !!saved, disabled: !saved, value: 'weiter' }, { label: 'Neu anfangen', primary: !saved, value: 'neu' }]
   });
+  if (c === 'install') { await installApp(); return startScreen(); }
   if (c === 'weiter' && saved) {
     S = saved; normalize();
     scene.classList.remove('morning'); $('#layer-bg').innerHTML = art('hof_hintergrund', bgSVG());
@@ -1811,8 +1821,9 @@ async function menu() {
   skipBubbles();
   const c = await showCard({
     title: 'Pause', html: HOWTO + (Store.ok ? '<p class="small">Der Spielstand wird nach jeder gelungenen Teilaufgabe gespeichert.</p>' : '<p class="note">Lokales Speichern ist in diesem Browser für die Datei nicht erlaubt.</p>'),
-    buttons: [{ label: 'Neu anfangen', value: 'neu' }, { label: 'Startbildschirm', value: 'start' }, { label: 'Weiterspielen', primary: true, value: 'weiter' }], closable: true
+    buttons: [...(canOfferInstall() ? [{ label: '📲 Als App installieren', value: 'install' }] : []), { label: 'Neu anfangen', value: 'neu' }, { label: 'Startbildschirm', value: 'start' }, { label: 'Weiterspielen', primary: true, value: 'weiter' }], closable: true
   });
+  if (c === 'install') { installApp(); return; }
   if (c === 'neu') { busy = 0; newGame(); }
   if (c === 'start') { busy = 0; startScreen(); }
 }
@@ -1850,6 +1861,28 @@ function ambient() {
   const [type, at, text] = rnd(c);
   sfx(type, at, { vol: .45, text });
   if (Math.random() < .45) { Snd.play('huste', .4); say('isolde', 'Hust …', { ms: 1500 }); }
+}
+
+/* ---------- App (PWA) ---------- */
+const IS_WEB = /^https?:$/.test(location.protocol);
+let installEvt = null;
+window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); installEvt = e; });
+window.addEventListener('appinstalled', () => { installEvt = null; });
+const isStandalone = () => (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
+const isIOS = () => /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const canOfferInstall = () => IS_WEB && !isStandalone();
+async function installApp() {
+  if (installEvt) { try { installEvt.prompt(); await installEvt.userChoice; } catch (e) { /* abgebrochen */ } installEvt = null; return; }
+  await showCard({
+    title: '📲 Als App installieren',
+    html: isIOS()
+      ? '<ol class="howto"><li>Diese Seite in <b>Safari</b> öffnen.</li><li>Unten auf <b>Teilen</b> tippen (Quadrat mit Pfeil nach oben).</li><li><b>„Zum Home-Bildschirm“</b> wählen und „Hinzufügen“ tippen.</li></ol><p class="small">Danach startet das Spiel wie eine App vom Home-Bildschirm – auch ohne Internet.</p>'
+      : '<ol class="howto"><li>Im Browser-Menü (⋮ oben rechts) <b>„App installieren“</b> oder <b>„Zum Startbildschirm hinzufügen“</b> wählen.</li><li>Bestätigen.</li></ol><p class="small">Danach startet das Spiel wie eine App – auch ohne Internet.</p>',
+    buttons: [{ label: 'Alles klar', primary: true }], closable: true
+  });
+}
+if ('serviceWorker' in navigator && IS_WEB) {
+  window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(() => { /* ohne Offline-Speicher weiter */ }); });
 }
 
 /* ---------- Ereignisse ---------- */

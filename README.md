@@ -9,6 +9,14 @@ Läuft im Browser auf Handy, Tablet und Computer. Keine Installation, keine Anme
 
 ---
 
+## Als App installieren
+
+Das Spiel ist eine **PWA** (Progressive Web App): Man kann es wie eine App auf den Startbildschirm legen. Danach startet es im Vollbild und funktioniert auch **ohne Internet**.
+
+- **Android (Chrome):** Link öffnen → im Spiel auf **📲 Als App** tippen, oder im Browser-Menü ⋮ „App installieren“.
+- **iPhone / iPad (Safari):** Link öffnen → **Teilen** (Quadrat mit Pfeil) → **„Zum Home-Bildschirm“**.
+- **Computer (Chrome / Edge):** Installieren-Symbol rechts in der Adressleiste.
+
 ## So wird gespielt
 
 1. Unten eine **Figur** auswählen.
@@ -46,9 +54,19 @@ Eine Runde dauert etwa 15 bis 20 Minuten. Es gibt kein Zeitlimit. In jeder neuen
 
 ## Technik
 
+| Datei | Zweck |
+| --- | --- |
+| `index.html` | das komplette Spiel inkl. aller Bilder |
+| `manifest.webmanifest` | App-Name, Icons, Farben für die Installation |
+| `sw.js` | Service Worker: speichert das Spiel für den Offline-Start |
+| `icon-*.png`, `apple-touch-icon.png`, `favicon.png` | App-Icons |
+| `screenshot-*.jpg` | Vorschaubilder im Installationsdialog |
+
+
 - Eine einzelne HTML-Datei mit eingebettetem CSS, JavaScript und Bildern (WebP als Data-URL), ohne externe Abhängigkeiten.
 - Alle Bilder stehen gesammelt im Block `window.ASSETS` (`<script id="bilder">`) am Anfang der Datei. Ein leerer Eintrag `""` zeigt einen gezeichneten Platzhalter. Zum Austauschen eines Bildes nur den jeweiligen Wert ersetzen.
 - Geräusche werden im Browser erzeugt (Web Audio), es gibt keine Audiodateien.
+- Offline: Der Service Worker lädt die Spielseite zuerst aus dem Netz (damit Änderungen sofort ankommen) und greift ohne Verbindung auf die gespeicherte Fassung zurück. Nach Änderungen an Icons oder Manifest in `sw.js` die Versionsnummer `CACHE` hochzählen.
 
 ## Entstehung
 
